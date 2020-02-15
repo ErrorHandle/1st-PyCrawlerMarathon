@@ -14,7 +14,7 @@ class HatePoliticsSpider(scrapy.Spider):
     MAX_RETRY = 1
 
     _pages = 0
-    MAX_PAGES = 5
+    MAX_PAGES = 1000
     def parse(self, response):
         if len(response.xpath('//div[@class="over18-notice"]')) > 0:
             if self._retries < HatePoliticsSpider.MAX_RETRY:
@@ -26,7 +26,7 @@ class HatePoliticsSpider(scrapy.Spider):
 
         else:
             self._pages += 1
-            for href in response.css('.r-ent > div.title > a::attr(href)'):
+            for href in response.css('.r-ent > div.title > a::attr(href)')[0:-4]:
                 url = response.urljoin(href.extract())
                 yield scrapy.Request(url, callback=self.parse_post)
 
@@ -41,8 +41,18 @@ class HatePoliticsSpider(scrapy.Spider):
             else:
                 logging.warning('max pages reached')
     def parse_post(self, response):
+
         item = PostItem()
+        item['url'] = response.url
         datetime_str = response.xpath('//div[@class="article-metaline"]/span[@class="article-meta-value"]/text()')[-1].extract()
         print(datetime_str)
         item['date'] = datetime.strptime(datetime_str, "%a %b %d %H:%M:%S %Y")
+        # item['content'] = response.xpath('//div[@id="main-container"]/text()')
+        # item['content'] = response.xpath('//div[@class="main-content"]/text()').get()
+        # strcontent = repr()
+        contentlist = response.xpath('//*[@id="main-content"]/text()[1]')
+        for content in contentlist.extract():
+            x = content.replace("\n", "").replace(" ", "").strip()
+        item['content'] = x
         yield item
+# //*[@id="main-content"]/text()[1]

@@ -10,6 +10,7 @@ import scrapy
 class PostItem(scrapy.Item):
     date = scrapy.Field()
     content = scrapy.Field()
+    url = scrapy.Field()
 
 class CrawlptthatepoliticsItem(scrapy.Item):
     # define the fields for your item here like:
