@@ -14,7 +14,7 @@ class HatePoliticsSpider(scrapy.Spider):
     MAX_RETRY = 1
 
     _pages = 0
-    MAX_PAGES = 1000
+    MAX_PAGES = 250
     def parse(self, response):
         if len(response.xpath('//div[@class="over18-notice"]')) > 0:
             if self._retries < HatePoliticsSpider.MAX_RETRY:
@@ -43,16 +43,38 @@ class HatePoliticsSpider(scrapy.Spider):
     def parse_post(self, response):
 
         item = PostItem()
-        item['url'] = response.url
+        item['author_ip'] = response.xpath('//span[@class="f2"]//text()').re('\d+\.\d+\.\d+\.\d+')[0]
+        item['title'] = response.xpath('//meta[@property="og:title"]/@content')[0].extract()
+        item['author'] = response.xpath('//div[@class="article-metaline"]/span[text()="作者"]/following-sibling::span[1]/text()')[0].extract().split(' ')[0]
         datetime_str = response.xpath('//div[@class="article-metaline"]/span[@class="article-meta-value"]/text()')[-1].extract()
-        print(datetime_str)
         item['date'] = datetime.strptime(datetime_str, "%a %b %d %H:%M:%S %Y")
-        # item['content'] = response.xpath('//div[@id="main-container"]/text()')
-        # item['content'] = response.xpath('//div[@class="main-content"]/text()').get()
-        # strcontent = repr()
         contentlist = response.xpath('//*[@id="main-content"]/text()[1]')
         for content in contentlist.extract():
             x = content.replace("\n", "").replace(" ", "").strip()
         item['content'] = x
+
+        comments = []
+        total_score = 0
+        commentlist = response.xpath('//div[@class="push"]')
+        for comment in commentlist:
+            push_tag = comment.css('span.push-tag::text')[0].extract()
+            push_user = comment.css('span.push-userid::text')[0].extract()
+            push_content = comment.css('span.push-content::text')[0].extract()
+
+            if '推' in push_tag:
+                score = 1
+            elif '噓' in push_tag:
+                score = -1
+            else:
+                score = 0
+            total_score += score
+
+            comments.append({'user': push_user,
+                             'content': push_content,
+                             'score': score
+                            })
+        item['comments'] = comments
+        item['score'] = total_score
+        item['url'] = response.url
+
         yield item
-# //*[@id="main-content"]/text()[1]

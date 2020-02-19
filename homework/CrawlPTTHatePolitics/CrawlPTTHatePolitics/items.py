@@ -8,9 +8,14 @@
 import scrapy
 
 class PostItem(scrapy.Item):
+    title = scrapy.Field()
     date = scrapy.Field()
+    author = scrapy.Field()
     content = scrapy.Field()
+    comments = scrapy.Field()
+    score = scrapy.Field()
     url = scrapy.Field()
+    author_ip = scrapy.Field()
 
 class CrawlptthatepoliticsItem(scrapy.Item):
     # define the fields for your item here like:
